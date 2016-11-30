@@ -27,9 +27,6 @@ eps = np.finfo(float).eps
 # Valor para terminar la iteración
 threshold = 0.001
 
-
-# In[4]:
-
 def log_multivariable_normal(X, mean, sigma, n_components):
     x = X.T
     # Evitar problemas de dimensiones
@@ -83,6 +80,33 @@ def m_step(gmm, X, gammas):
     gmm.sigmas = calculate_new_sigmas(X, gammas, gmm.means, gmm.n_components)
 
 
+
+def plot_2d(X, means, sigmas, fig_number, title):
+    fig = plt.figure(fig_number)
+    ax = fig.add_subplot(111, aspect='equal')
+    ax.set_xlim(-10, 10)
+    ax.set_ylim(-10, 10)
+    ax.scatter(X[:, 0], X[:, 1], c='yellow')
+    ax.scatter(means[:, 0], means[:, 1], s=40)
+    for idx, mean in enumerate(means):
+        covar_matrix = sigmas[idx]
+        w, v = np.linalg.eig(covar_matrix)
+        width = 2 * np.sqrt(w[0] * 5.991)
+        height = 2 * np.sqrt(w[1] * 5.991)
+        largest_vector = v[0]
+        if np.linalg.norm(v[1]) > np.linalg.norm(v[0]):
+            largest_vector = v[1]
+        v1_y = largest_vector[1]
+        v1_x = largest_vector[0]
+        angle = np.arctan(v1_x / v1_y) * 180 / np.pi
+        e = Ellipse(mean, width=height, height=width, angle=angle)
+        e.set_clip_box(ax.bbox)
+        e.set_alpha(0.6)
+        e.set_facecolor(random.rand(3))
+        ax.add_artist(e)
+        plt.title(title)
+
+
 def fit_gmm(X, n_components):
     kmeans = KMeans(n_clusters=n_components, random_state=0).fit(X)
     # Primero, inicializamos ocupando k-means
@@ -115,6 +139,9 @@ def fit_gmm(X, n_components):
         lpr = mean_logs
         
     print('delta after ' + str(num_iters) + ' iterations: ' + str(lpr - mean_logs))
+    # Ploteamos 2D para visualizar resultados
+    if X.shape[1] == 2:       
+        plot_2d(X, mixture.means, mixture.sigmas, 0, 'Calculado')
 
     print('Calculated means: ')
     print(np.sort(mixture.means, axis=0))
@@ -131,6 +158,13 @@ def fit_gmm(X, n_components):
     # print('Sklearn weights: ')
     # print(gmm.weights_)
 
+    if X.shape[1] == 2:
+        plot_2d(X, gmm.means_, gmm.covariances_, 1, 'Sklearn')
+        print('--------------')
+        print('Plotting 2D cases')
+        print('--------------')
+        plt.show()
+        
 
 # Generamos los datos con normal multivariable
 def generate_data(num_dims, n_components):
@@ -150,7 +184,7 @@ def generate_data(num_dims, n_components):
     return X
 
 
-random_params = [(2, 7)]
+random_params = [(2, 7), (3, 5)]
 plt.close("all")
 
 for params in random_params:
